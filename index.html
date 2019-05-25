@@ -12,7 +12,7 @@
     crossorigin="anonymous">
     <link rel="stylesheet" type="text/css" href="main.css">
 
-    <title>meme voting</title>
+    <title>logo voting</title>
   </head>
   <body>
     <div class="container">
@@ -22,7 +22,7 @@
           <div id="title-div">
             <img src="img/joy.png">
             <img src="img/vote.png">
-            <h1>Meme Voting</h1>
+            <h1>Logo Voting</h1>
           </div>
 
           <div id="message">
@@ -36,7 +36,7 @@
             <form>
               <div class="form-row">
                 <div class="col">
-                  <input type="text" id="regUrl" class="form-control" placeholder="Url of the meme">
+                  <input type="text" id="regUrl" class="form-control" placeholder="Url of the logo">
                 </div>
                 <div class="col">
                   <input type="text" id="regName" class="form-control" placeholder="Your name">
@@ -47,7 +47,7 @@
             <button id="registerBtn" class="btn btn-block">Register</button>
           </div>
 
-          <div id="memeBody">
+          <div id="logoBody">
           </div>
 
         </div>
@@ -55,17 +55,17 @@
     </div>
 
     <script id="template" type="x-tmpl-mustache">
-      {{#memeArray}}
+      {{#logoArray}}
         <div class="card">
           <h5 class="card-title">{{creatorName}}</h5>
-          <img class="card-img-top" src="{{memeUrl}}" alt="Card image cap">
+          <img class="card-img-top" src="{{logoUrl}}" alt="Card image cap">
           <div class="card-body">
             <h6 class="card-subtitle mb-2 text-muted">{{votes}} ættos</h6>
             <input type="number" class="form-control" placeholder="Amount" id={{index}}>
             <button class="btn voteBtn btn-block" id={{index}}>VOTE</button>
           </div>
         </div>
-      {{/memeArray}}
+      {{/logoArray}}
     </script>
 
 
