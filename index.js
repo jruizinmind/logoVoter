@@ -45,50 +45,112 @@ var logoArray = [
 var logosLength = 0;
 var client = null;
 
-function renderLogos()
-{
-  logoArray = logoArray.sort(function(a, b){ return b.votes-a.votes})
-  var template = $('#template').html();
+function renderLogos() {
+  //Order the logos array so that the logo with the most votes is on top
+  logoArray = logoArray.sort(function(a,b){return b.votes-a.votes})
+  //Get the template we created in a block scoped variable
+  let template = $('#template').html();
+  //Use mustache parse function to speeds up on future uses
   Mustache.parse(template);
-  var rendered = Mustache.render(template, {logoArray});
+  //Create variable with result of render func form template and data
+  let rendered = Mustache.render(template, {logoArray});
+  //Use jquery to add the result of the rendering to our html
   $('#logoBody').html(rendered);
 }
 
+//Create a asynchronous read call for our smart contract
+async function callStatic(func, args) {
+  //Create a new contract instance that we can interact with
+  const contract = await client.getContractInstance(contractSource, {contractAddress});
+  //Make a call to get data of smart contract func, with specefied arguments
+  const calledGet = await contract.call(func, args, {callStatic: true}).catch(e => console.error(e));
+  //Make another call to decode the data received in first call
+  const decodedGet = await calledGet.decode().catch(e => console.error(e));
+
+  return decodedGet;
+}
+
+//Create a asynchronous write call for our smart contract
+async function contractCall(func, args, value) {
+  const contract = await client.getContractInstance(contractSource, {contractAddress});
+  //Make a call to write smart contract func, with aeon value input
+  const calledSet = await contract.call(func, args, {amount: value}).catch(e => console.error(e));
+
+  return calledSet;
+}
+
+//Execute main function
 window.addEventListener('load', async () => {
+  //Display the loader animation so the user knows that something is happening
   $("#loader").show();
-  
+
+  //Initialize the Aepp object through aepp-sdk.browser.js, the base app needs to be running.
   client = await Ae.Aepp();
 
-  const contract = await client.getContractInstance(contractSource, {contractAddress});
-  const calledGet = await contract.call('getLogosLength', [], {callstatic: true}).catch(e => console.error(e));
-  console.log('calledGet', calledGet);
+  //First make a call to get to know how may logos have been created and need to be displayed
+  //Assign the value of logo length to the global variable
+  logosLength = await callStatic('getLogosLength', []);
 
-  const decodedGet = await calledGet.decode().catch(e => console.error(e));
-  console.log('decodedGet', decodedGet);
+  //Loop over every logo to get all their relevant information
+  for (let i = 1; i <= logosLength; i++) {
 
+    //Make the call to the blockchain to get all relevant information on the logo
+    const logo = await callStatic('getLogo', [i]);
+
+    //Create logo object with  info from the call and push into the array with all logos
+    logoArray.push({
+      creatorName: logo.name,
+      logoUrl: logo.url,
+      index: i,
+      votes: logo.voteCount,
+    })
+  }
+
+  //Display updated logos
   renderLogos();
 
+  //Hide loader animation
   $("#loader").hide();
 });
 
+//If someone clicks to vote on a logo, get the input and execute the voteCall
 jQuery("#logoBody").on("click", ".voteBtn", async function(event){
-  const value = $(this).siblings('input').val();
-  const dataIndex = event.target.id;
-  const foundIndex = logoArray.findIndex(logo => logo.index == dataIndex);
+  $("#loader").show();
+  //Create two new let block scoped variables, value for the vote input and
+  //index to get the index of the logo on which the user wants to vote
+  let value = $(this).siblings('input').val(),
+      index = event.target.id;
+
+  //Promise to execute execute call for the vote logo function with let values
+  await contractCall('logoVote', [index], value);
+
+  //Hide the loading animation after async calls return a value
+  const foundIndex = logoArray.findIndex(logo => logo.index == event.target.id);
+  //console.log(foundIndex);
   logoArray[foundIndex].votes += parseInt(value, 10);
+
   renderLogos();
+  $("#loader").hide();
 });
 
-$('#registerBtn').click(async function()
-{
-  var name =  ($('#regName').val()),
-      url = ($('#regUrl').val());
+//If someone clicks to register a logo, get the input and execute the registerCall
+$('#registerBtn').click(async function(){
+  $("#loader").show();
+  //Create two new let variables which get the values from the input fields
+  const name = ($('#regName').val()),
+        url = ($('#regUrl').val());
 
+  //Make the contract call to register the logo with the newly passed values
+  await contractCall('setLogo', [url, name], 0);
+
+  //Add the new created logoobject to our logoarray
   logoArray.push({
     creatorName: name,
     logoUrl: url,
-    index: logoArray.length + 1,
-    votes: 0
+    index: logoArray.length+1,
+    votes: 0,
   })
+
   renderLogos();
+  $("#loader").hide();
 });
