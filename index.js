@@ -1,5 +1,5 @@
 const contractSource = `
-  contract LogoVote = 
+contract LogoVote = 
 
   record logo = 
     { creatorAddress : address,
@@ -45,7 +45,7 @@ var logoArray = [];
 //Create a new variable to store the length of the logo globally
 var logosLength = 0;
 
-function renderlogos() {
+function renderLogos() {
   //Order the logos array so that the logo with the most votes is on top
   logoArray = logoArray.sort(function(a,b){return b.votes-a.votes})
   //Get the template we created in a block scoped variable
@@ -102,12 +102,12 @@ window.addEventListener('load', async () => {
       creatorName: logo.name,
       logoUrl: logo.url,
       index: i,
-      votes: logo.voteCount,
+      votes: logo.voteCounter,
     })
   }
 
   //Display updated logos
-  renderlogos();
+  renderLogos();
 
   //Hide loader animation
   $("#loader").hide();
@@ -129,7 +129,7 @@ jQuery("#logoBody").on("click", ".voteBtn", async function(event){
   //console.log(foundIndex);
   logoArray[foundIndex].votes += parseInt(value, 10);
 
-  renderlogos();
+  renderLogos();
   $("#loader").hide();
 });
 
@@ -151,6 +151,6 @@ $('#registerBtn').click(async function(){
     votes: 0,
   })
 
-  renderlogos();
+  renderLogos();
   $("#loader").hide();
 });
