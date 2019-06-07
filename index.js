@@ -1,61 +1,61 @@
 const contractSource = `
-  contract MemeVote =
+  contract LogoVote = 
 
-    record meme =
-      { creatorAddress : address,
-        url            : string,
-        name           : string,
-        voteCount      : int }
+  record logo = 
+    { creatorAddress : address,
+      url            : string,
+      name           : string,
+      voteCounter    : int }
 
-    record state =
-      { memes      : map(int, meme),
-        memesLength : int }
+  record state = 
+    { logos       : map(int, logo),
+      logosLength : int }
 
-    function init() =
-      { memes = {},
-        memesLength = 0 }
+  function init() = 
+    { logos = {},
+      logosLength = 0 }
 
-    public function getMeme(index : int) : meme =
-      switch(Map.lookup(index, state.memes))
-        None    => abort("There was no meme with this index registered.")
-        Some(x) => x
+  public function getLogo(index : int) : logo =
+    switch(Map.lookup(index, state.logos))
+      None     => abort("There was no logo with this index registered.")
+      Some(x)  => x
 
-    public stateful function registerMeme(url' : string, name' : string) =
-      let meme = { creatorAddress = Call.caller, url = url', name = name', voteCount = 0}
-      let index = getMemesLength() + 1
-      put(state{ memes[index] = meme, memesLength = index })
-
-    public function getMemesLength() : int =
-      state.memesLength
-
-    public stateful function voteMeme(index : int) =
-      let meme = getMeme(index)
-      Chain.spend(meme.creatorAddress, Call.value)
-      let updatedVoteCount = meme.voteCount + Call.value
-      let updatedMemes = state.memes{ [index].voteCount = updatedVoteCount }
-      put(state{ memes = updatedMemes })
+  public stateful function setLogo(url' : string, name' : string) = 
+    let logo = { creatorAddress = Call.caller, url = url', name = name', voteCounter = 0}
+    let index = getLogosLength() + 1
+    put(state { logos[index] = logo, logosLength = index })
+    
+  public function getLogosLength() : int =
+    state.logosLength
+    
+  public stateful function logoVote(index : int) =
+    let logo = getLogo(index)
+    Chain.spend(logo.creatorAddress, Call.value)
+    let updatedLogoCounter = logo.voteCounter + Call.value
+    let updatedLogos = state.logos{ [index].voteCounter = updatedLogoCounter }
+    put(state{ logos = updatedLogos })
 `;
 
-//Address of the meme voting smart contract on the testnet of the aeternity blockchain
-const contractAddress = 'ct_2j52xZGcK8Gv31s4qXxmQ2WvwNVMFjMW2yeH9RiNWbwNe8jSuE';
+//Address of the logo voting smart contract on the testnet of the aeternity blockchain
+const contractAddress = 'ct_Mw7DjutJSmDbdAJ1BQwpGBr7mH8TsS2TeUYiqxB28UWHLHZW2';
 //Create variable for client so it can be used in different functions
 var client = null;
-//Create a new global array for the memes
-var memeArray = [];
-//Create a new variable to store the length of the meme globally
-var memesLength = 0;
+//Create a new global array for the logos
+var logoArray = [];
+//Create a new variable to store the length of the logo globally
+var logosLength = 0;
 
-function renderMemes() {
-  //Order the memes array so that the meme with the most votes is on top
-  memeArray = memeArray.sort(function(a,b){return b.votes-a.votes})
+function renderlogos() {
+  //Order the logos array so that the logo with the most votes is on top
+  logoArray = logoArray.sort(function(a,b){return b.votes-a.votes})
   //Get the template we created in a block scoped variable
   let template = $('#template').html();
   //Use mustache parse function to speeds up on future uses
   Mustache.parse(template);
   //Create variable with result of render func form template and data
-  let rendered = Mustache.render(template, {memeArray});
+  let rendered = Mustache.render(template, {logoArray});
   //Use jquery to add the result of the rendering to our html
-  $('#memeBody').html(rendered);
+  $('#logoBody').html(rendered);
 }
 
 //Create a asynchronous read call for our smart contract
@@ -87,70 +87,70 @@ window.addEventListener('load', async () => {
   //Initialize the Aepp object through aepp-sdk.browser.js, the base app needs to be running.
   client = await Ae.Aepp();
 
-  //First make a call to get to know how may memes have been created and need to be displayed
-  //Assign the value of meme length to the global variable
-  memesLength = await callStatic('getMemesLength', []);
+  //First make a call to get to know how may logos have been created and need to be displayed
+  //Assign the value of logo length to the global variable
+  logosLength = await callStatic('getLogosLength', []);
 
-  //Loop over every meme to get all their relevant information
-  for (let i = 1; i <= memesLength; i++) {
+  //Loop over every logo to get all their relevant information
+  for (let i = 1; i <= logosLength; i++) {
 
-    //Make the call to the blockchain to get all relevant information on the meme
-    const meme = await callStatic('getMeme', [i]);
+    //Make the call to the blockchain to get all relevant information on the logo
+    const logo = await callStatic('getLogo', [i]);
 
-    //Create meme object with  info from the call and push into the array with all memes
-    memeArray.push({
-      creatorName: meme.name,
-      memeUrl: meme.url,
+    //Create logo object with  info from the call and push into the array with all logos
+    logoArray.push({
+      creatorName: logo.name,
+      logoUrl: logo.url,
       index: i,
-      votes: meme.voteCount,
+      votes: logo.voteCount,
     })
   }
 
-  //Display updated memes
-  renderMemes();
+  //Display updated logos
+  renderlogos();
 
   //Hide loader animation
   $("#loader").hide();
 });
 
-//If someone clicks to vote on a meme, get the input and execute the voteCall
-jQuery("#memeBody").on("click", ".voteBtn", async function(event){
+//If someone clicks to vote on a logo, get the input and execute the voteCall
+jQuery("#logoBody").on("click", ".voteBtn", async function(event){
   $("#loader").show();
   //Create two new let block scoped variables, value for the vote input and
-  //index to get the index of the meme on which the user wants to vote
+  //index to get the index of the logo on which the user wants to vote
   let value = $(this).siblings('input').val(),
       index = event.target.id;
 
-  //Promise to execute execute call for the vote meme function with let values
-  await contractCall('voteMeme', [index], value);
+  //Promise to execute execute call for the vote logo function with let values
+  await contractCall('logoVote', [index], value);
 
   //Hide the loading animation after async calls return a value
-  const foundIndex = memeArray.findIndex(meme => meme.index == event.target.id);
+  const foundIndex = logoArray.findIndex(logo => logo.index == event.target.id);
   //console.log(foundIndex);
-  memeArray[foundIndex].votes += parseInt(value, 10);
+  logoArray[foundIndex].votes += parseInt(value, 10);
 
-  renderMemes();
+  renderlogos();
   $("#loader").hide();
 });
 
-//If someone clicks to register a meme, get the input and execute the registerCall
+//If someone clicks to register a logo, get the input and execute the registerCall
 $('#registerBtn').click(async function(){
   $("#loader").show();
   //Create two new let variables which get the values from the input fields
   const name = ($('#regName').val()),
         url = ($('#regUrl').val());
 
-  //Make the contract call to register the meme with the newly passed values
-  await contractCall('registerMeme', [url, name], 0);
+  //Make the contract call to register the logo with the newly passed values
+  await contractCall('setLogo', [url, name], 0);
 
-  //Add the new created memeobject to our memearray
-  memeArray.push({
+  //Add the new created logoobject to our logoarray
+  logoArray.push({
     creatorName: name,
-    memeUrl: url,
-    index: memeArray.length+1,
+    logoUrl: url,
+    index: logoArray.length+1,
     votes: 0,
   })
 
-  renderMemes();
+  renderlogos();
   $("#loader").hide();
 });
