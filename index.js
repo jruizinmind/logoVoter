@@ -37,7 +37,7 @@ const contractSource = `
 `;
 
 //Address of the logo voting smart contract on the testnet of the aeternity blockchain
-const contractAddress = 'ct_Mw7DjutJSmDbdAJ1BQwpGBr7mH8TsS2TeUYiqxB28UWHLHZW2';
+const contractAddress = 'ct_2X3YvA9ATxmbWffF7KuX4CrHW9X3tVKB5ggmZQ5r7GmQvUj9A3';
 //Create variable for client so it can be used in different functions
 var client = null;
 //Create a new global array for the logos
